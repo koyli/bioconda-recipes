@@ -1,0 +1,219 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 66d7d6d..0ba2ae6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,7 +3,7 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+ SET(PROJECT_NAME_STR GCTA2)
+ PROJECT(${PROJECT_NAME_STR} C CXX)
+ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+-SET(CMAKE_CXX_STANDARD 11)
++SET(CMAKE_CXX_STANDARD 14)
+ SET(CMAKE_C_STANDARD 11)
+ 
+ # get system architecture
+@@ -63,7 +63,7 @@ INCLUDE_DIRECTORIES("submods/plink-ng/2.0/simde")
+ 
+ 
+ message(STATUS "ARCHITECTURE:${CMAKE_LIBRARY_ARCHITECTURE}")
+-if(CMAKE_LIBRARY_ARCHITECTURE STREQUAL "aarch64")
++if(CMAKE_LIBRARY_ARCHITECTURE STREQUAL "aarch64" OR CMAKE_LIBRARY_ARCHITECTURE STREQUAL "arm64")
+     SET(OPENBLAS "$ENV{OPENBLAS}")
+     IF(NOT OPENBLAS)
+         MESSAGE(FATAL_ERROR "Specify environment variable OPENBLAS to the location of OPENBLAS package")
+@@ -74,21 +74,16 @@ if(CMAKE_LIBRARY_ARCHITECTURE STREQUAL "aarch64")
+     set(BLAS_LIB ${lib_openblas})
+ 
+     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread")
++        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+         set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+         set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
+         add_compile_options(-fopenmp)
+-        set(CMAKE_EXE_LINKER_FLAGS "-Wl,-no_implicit_dylibs")
+-        if(NOT APPLE)
+-            # don't delete this it will result in _implibs
+-            set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+-        endif()
++        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no_implicit_dylibs")
+     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread -fvisibility=hidden -fvisibility-inlines-hidden")
++        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fvisibility=hidden -fvisibility-inlines-hidden")
+         set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG") #-flto
+         set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -O0 -fno-inline -fno-implicit-inline-templates -g3")
+         add_compile_options(-fopenmp)
+-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -openmp -pthread")
+         set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -ipo -DNDEBUG")
+@@ -178,7 +173,7 @@ add_executable(gcta64 ${MAIN_SOURCE})
+ 
+ if(APPLE)
+     # iomp5
+-    target_link_libraries(gcta64 ${libs_list} Pgenlib mainV1 z ${BLAS_LIB} sqlite3 zstd_s omp pthread m dl )
++    target_link_libraries(gcta64 ${libs_list} Pgenlib mainV1 z ${BLAS_LIB} sqlite3 zstd gsl omp pthread m dl )
+ else()
+     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+         # error keeps only
+@@ -190,7 +185,7 @@ else()
+     else()
+         #target_link_libraries(gcta64 mainV1 ${libs_list} -Wl,-Bstatic z -Wl,--start-group ${MKL_LIB} -Wl,--end-group gomp -Wl,-Bdynamic pthread m dl)
+         #target_link_libraries(gcta64 mainV1 ${libs_list} Pgenlib -static z sqlite3 zstd -Wl,--start-group ${MKL_LIB} -Wl,--end-group gomp -Wl,--whole-archive -lpthread -Wl,--no-whole-archive m dl)
+-        target_link_libraries(gcta64 mainV1 ${libs_list} Pgenlib z sqlite3 zstd gsl gslcblas m -Wl,--start-group ${BLAS_LIB} -Wl,--end-group gomp -Wl,--whole-archive -lpthread -Wl,--no-whole-archive m dl)
++        target_link_libraries(gcta64 mainV1 ${libs_list} Pgenlib z sqlite3 zstd gsl m -Wl,--start-group ${BLAS_LIB} -Wl,--end-group gomp -Wl,--whole-archive -lpthread -Wl,--no-whole-archive m dl)
+     endif()
+ endif()
+ 
+diff --git a/include/Matrix.hpp b/include/Matrix.hpp
+index b203774..bc43601 100644
+--- a/include/Matrix.hpp
++++ b/include/Matrix.hpp
+@@ -32,7 +32,7 @@ bool _LLT(MatrixType &A, double &logdet){
+ #if GCTA_CPU_x86
+     dpotrf(&uplo, &cols, vi, &cols, &info);
+ #else
+-    dpotrf_(&uplo, &cols, vi, &cols, &info);
++    LAPACK_dpotrf(&uplo, &cols, vi, &cols, &info);
+ #endif    
+     //LOGGER << "  LLT time: " << LOGGER.tp("LLT") << std::endl;
+     if(info == 0){
+@@ -41,7 +41,7 @@ bool _LLT(MatrixType &A, double &logdet){
+ #if GCTA_CPU_x86        
+         dpotri(&uplo, &cols, vi, &cols, &info);
+ #else
+-        dpotri_(&uplo, &cols, vi, &cols, &info);
++        LAPACK_dpotri(&uplo, &cols, vi, &cols, &info);
+ #endif
+         //LOGGER << "  LLT inverse time: " << LOGGER.tp("LLT_INV") << std::endl;
+         if(info == 0){
+diff --git a/main/mkl.cpp b/main/mkl.cpp
+index b1e3cb5..4789ad2 100644
+--- a/main/mkl.cpp
++++ b/main/mkl.cpp
+@@ -365,7 +365,7 @@ bool gcta::comput_inverse_logdet_LDLT_mkl(eigenMatrix &Vi, double &logdet)
+ #if GCTA_CPU_x86
+     dpotrf(&uplo, &int_n, Vi_mkl, &int_n, &info);
+ #else
+-    dpotrf_(&uplo, &int_n, Vi_mkl, &int_n, &info);
++    LAPACK_dpotrf(&uplo, &int_n, Vi_mkl, &int_n, &info);
+ #endif
+     //LOGGER << "Finished decompose" << endl;
+     //spotrf( &uplo, &n, Vi_mkl, &n, &info );
+@@ -386,7 +386,7 @@ bool gcta::comput_inverse_logdet_LDLT_mkl(eigenMatrix &Vi, double &logdet)
+ #if GCTA_CPU_x86
+         dpotri(&uplo, &int_n, Vi_mkl, &int_n, &info);
+ #else
+-        dpotri_(&uplo, &int_n, Vi_mkl, &int_n, &info);
++        LAPACK_dpotri(&uplo, &int_n, Vi_mkl, &int_n, &info);
+ #endif
+         //LOGGER << "Inverse finished" << endl;
+         //spotri( &uplo, &n, Vi_mkl, &n, &info );
+@@ -431,7 +431,7 @@ bool gcta::comput_inverse_logdet_LU_mkl(eigenMatrix &Vi, double &logdet)
+ #if GCTA_CPU_x86
+     dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
+ #else
+-    dgetrf_(&N, &N, Vi_mkl, &N, IPIV, &INFO);
++    LAPACK_dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
+ #endif
+     if (INFO < 0) LOGGER.e(0, "LU decomposition failed. Invalid values found in the matrix.\n");
+     else if (INFO > 0) {
+@@ -450,7 +450,7 @@ bool gcta::comput_inverse_logdet_LU_mkl(eigenMatrix &Vi, double &logdet)
+ #if GCTA_CPU_x86
+         dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
+ #else
+-        dgetri_(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
++        LAPACK_dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
+ #endif
+         if (INFO < 0){
+             LOGGER.e(0, "invalid values found in the variance-covariance (V) matrix.\n");
+@@ -493,7 +493,7 @@ bool gcta::comput_inverse_logdet_LU_mkl_array(int n, float *Vi, double &logdet)
+ #if GCTA_CPU_x86
+     dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
+ #else
+-    dgetrf_(&N, &N, Vi_mkl, &N, IPIV, &INFO);    
++    LAPACK_dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);    
+ #endif
+     if (INFO < 0) LOGGER.e(0, "LU decomposition failed. Invalid values found in the matrix.\n");
+     else if (INFO > 0) {
+@@ -514,7 +514,7 @@ bool gcta::comput_inverse_logdet_LU_mkl_array(int n, float *Vi, double &logdet)
+ #if GCTA_CPU_x86
+         dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
+ #else
+-        dgetri_(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
++        LAPACK_dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
+ #endif
+         if (INFO < 0) LOGGER.e(0, "invalid values found in the variance-covariance (V) matrix.\n");
+         else if (INFO > 0) {
+diff --git a/src/Geno.cpp b/src/Geno.cpp
+index f6eb66c..0d39bdb 100644
+--- a/src/Geno.cpp
++++ b/src/Geno.cpp
+@@ -2786,7 +2786,9 @@ void Geno::bgen2bed(const vector<uint32_t> &raw_marker_index){
+     std::ofstream infos("exmaple.txt");
+     infos << "index\traw_index\tpos\tLen_comp\tLen_decomp" << std::endl;
+     */
++#if !defined(__clang__)  // clang allows only one ordered region per loop iteration
+     #pragma omp parallel for schedule(static) ordered
++#endif
+     for(uint32_t index = 0; index < num_markers; index++){
+         //LOGGER.i(0, to_string(index) + "NUM_thread: " + to_string(omp_get_max_threads()));
+         auto raw_index = raw_marker_index[index];
+@@ -2796,7 +2798,9 @@ void Geno::bgen2bed(const vector<uint32_t> &raw_marker_index){
+         uint32_t len_comp, len_decomp;
+         char * snp_data;
+ 
++#if !defined(__clang__)  // clang allows only one ordered region per loop iteration
+         #pragma omp ordered
++#endif
+         {
+             fseek(h_bgen, byte_pos, SEEK_SET);
+             len_comp = read1Byte<uint32_t>(h_bgen) - 4;
+@@ -2948,7 +2952,9 @@ void Geno::bgen2bed(const vector<uint32_t> &raw_marker_index){
+         }
+         //LOGGER.i(0, "MIDDLE: " + to_string(index) + "NUM_thread: " + to_string(omp_get_max_threads()));
+ 
++#if !defined(__clang__)  // clang allows only one ordered region per loop iteration
+         #pragma omp ordered
++#endif
+         save_bed(buf, num_marker);
+         delete[] buf;
+         delete[] dec_data;
+diff --git a/src/StatLib.cpp b/src/StatLib.cpp
+index be56fb3..f54c24d 100644
+--- a/src/StatLib.cpp
++++ b/src/StatLib.cpp
+@@ -92,7 +92,7 @@ namespace StatLib{
+ #if GCTA_CPU_x86
+         dgeqrf(&n, &n, X, &lda, tau, work, &lwork, &info);
+ #else
+-        dgeqrf_(&n, &n, X, &lda, tau, work, &lwork, &info);
++        LAPACK_dgeqrf(&n, &n, X, &lda, tau, work, &lwork, &info);
+ #endif
+         if(info != 0){
+             return false;
+@@ -117,7 +117,7 @@ namespace StatLib{
+         dormqr(&side, &t, &n, &n, &n, X, &lda, tau, c, 
+                 &lda, work, &lwork, &info);
+ #else
+-        dormqr_(&side, &t, &n, &n, &n, X, &lda, tau, c, 
++        LAPACK_dormqr(&side, &t, &n, &n, &n, X, &lda, tau, c, 
+                 &lda, work, &lwork, &info);
+ #endif
+         if(info != 0){
+diff --git a/submods/plink-ng/2.0/plink2_base.h b/submods/plink-ng/2.0/plink2_base.h
+index d9ac69d..251e7b3 100644
+--- a/submods/plink-ng/2.0/plink2_base.h
++++ b/submods/plink-ng/2.0/plink2_base.h
+@@ -1005,11 +1005,11 @@ HEADER_INLINE VecC vecc_setzero() {
+ }
+ 
+ HEADER_INLINE VecW vecw_srli(VecW vv, uint32_t ct) {
+-  return R_CAST(VecW, _mm_srli_epi64(R_CAST(__m128i, vv), ct));
++  return R_CAST(VecW, _mm_srl_epi64(R_CAST(__m128i, vv), _mm_cvtsi32_si128(ct)));
+ }
+ 
+ HEADER_INLINE VecW vecw_slli(VecW vv, uint32_t ct) {
+-  return R_CAST(VecW, _mm_slli_epi64(R_CAST(__m128i, vv), ct));
++  return R_CAST(VecW, _mm_sll_epi64(R_CAST(__m128i, vv), _mm_cvtsi32_si128(ct)));
+ }
+ 
+ HEADER_INLINE VecW vecw_and_notfirst(VecW excl, VecW main) {
