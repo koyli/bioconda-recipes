@@ -10,7 +10,7 @@ source:
   sha256: 4e33eb030a20d02deaac928b91eeb57056b10303aaacc57f20b917c875fa18f9
 
 build:
-  number: 0
+  number: 1
   script:
     - sed -i.bak "s#CONDA_PREFIX#PREFIX#g" setup.py
     - rm -rf *.bak
@@ -21,6 +21,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ stdlib('c') }}
   host:
     - python
     - pip
@@ -69,6 +70,7 @@ about:
 extra:
   additional-platforms:
     - osx-arm64
+    - linux-aarch64
   recipe-maintainers:
     - wasade
     - sfiligoi
