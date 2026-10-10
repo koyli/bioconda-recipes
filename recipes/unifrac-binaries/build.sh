@@ -14,16 +14,17 @@ pwd
 
 if [[ "$(uname -s)" == "Linux" ]];
 then
-          which x86_64-conda-linux-gnu-gcc
-          x86_64-conda-linux-gnu-gcc -v
-          x86_64-conda-linux-gnu-g++ -v
+          which ${CC}
+          ${CC} -v
+          ${CXX} -v
 else
           which clang
           clang -v
 fi
 which h5c++
 
-if [[ "$(uname -s)" == "Linux" ]] && [[ "x${BUILD_NV_OFFLOAD}" != "xcpu" ]];
+# The NVIDIA HPC SDK install script only supports Linux x86_64
+if [[ "$(uname -s)" == "Linux" ]] && [[ "$(uname -m)" == "x86_64" ]] && [[ "x${BUILD_NV_OFFLOAD}" != "xcpu" ]];
         then
           export BUILD_NV_OFFLOAD=acc
           # install PGI locally
