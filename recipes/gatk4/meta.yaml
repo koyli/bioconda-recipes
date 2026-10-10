@@ -23,7 +23,7 @@ requirements:
     - r-ggplot2
     - r-gsalib
     - r-reshape
-    - gcnvkernel =0.9
+    - gcnvkernel =0.9  # needs MKL [x86_64]
   run:
     - openjdk =17
     - python
@@ -32,7 +32,7 @@ requirements:
     - r-ggplot2
     - r-gsalib
     - r-reshape
-    - gcnvkernel =0.9
+    - gcnvkernel =0.9  # needs MKL [x86_64]
 
 test:
   commands:
