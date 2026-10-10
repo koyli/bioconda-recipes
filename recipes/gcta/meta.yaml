@@ -1,32 +1,73 @@
 {% set name = "gcta" %}
 {% set version = "1.94.1" %}
+{% set plink_ng_commit = "3744540f95384cd39c65d76079864203b544ff80" %}
 
 package:
   name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  - url: https://yanglab.westlake.edu.cn/software/{{ name }}/bin/{{ name }}-{{ version }}-linux-kernel-3-x86_64.zip # [linux]
-    sha256: f2fc3f46b98f5eb2bbe0886a2c60268c6b634583f7a3fed51cfeb15e9f33fb0d # [linux]
-  - url: https://yanglab.westlake.edu.cn/software/{{ name }}/bin/{{ name }}-{{ version }}-macOS-x86_64.zip # [osx]
-    sha256: 51c2a5c622cb7ab8d246252abece9d28bf6e41c0e54a0b820a0871695a269441 # [osx]
+  # upstream x86_64 binaries (the yanglab.westlake.edu.cn zips are no longer served)
+  - url: https://github.com/jianyangqt/gcta/releases/download/v{{ version }}/gcta-{{ version }}-linux-x86_64-static # [linux and x86_64]
+    sha256: dbb2b5e5d51e278328ff297a403d3dd8ee5f5280f0b6d3d8db74b3e7fead7b49 # [linux and x86_64]
+  - url: https://github.com/jianyangqt/gcta/releases/download/v{{ version }}/gcta-{{ version }}-MacOS-x86_64 # [osx and x86_64]
+    sha256: 33f4b78f03b1b26d11a34f15089d245ca1f94d4424113e81cea4a6c1d1e10a36 # [osx and x86_64]
+  # No upstream binaries for ARM, so build from source there
+  - url: https://github.com/jianyangqt/gcta/archive/refs/tags/v{{ version }}.tar.gz # [aarch64 or arm64]
+    sha256: d38841587bef016d7885cc1b3287d7ed0373bd370674130e814e2c5e6a90bfbf # [aarch64 or arm64]
+    patches: # [aarch64 or arm64]
+      - 0001-build-from-source-on-arm64.patch # [aarch64 or arm64]
+  # git submodule submods/plink-ng
+  - url: https://github.com/zhilizheng/plink-ng/archive/{{ plink_ng_commit }}.tar.gz # [aarch64 or arm64]
+    sha256: a7c70c237d49d64fc1668ced373036c09b41d7c61d0b8b24b47e2fb76474455d # [aarch64 or arm64]
+    folder: submods/plink-ng # [aarch64 or arm64]
+    patches: # [aarch64 or arm64]
+      - 0002-plink-ng-variable-count-shifts.patch # [aarch64 or arm64]
+  # upstream requires Eigen 3.3.7, which conda-forge does not have for osx-arm64
+  - url: https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.gz # [aarch64 or arm64]
+    sha256: d56fbad95abf993f8af608484729e3d87ef611dd85b3380a8bad1d5cbc373a57 # [aarch64 or arm64]
+    folder: eigen # [aarch64 or arm64]
 
 build:
-  number: 0
+  number: 1
+  run_exports:
+    - {{ pin_subpackage(name, max_pin="x.x") }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}  # [aarch64 or arm64]
+    - {{ compiler('cxx') }}  # [aarch64 or arm64]
+    - {{ stdlib('c') }}  # [aarch64 or arm64]
+    - cmake  # [aarch64 or arm64]
+    - make  # [aarch64 or arm64]
+  host:
+    - openblas  # [aarch64 or arm64]
+    - libboost-headers  # [aarch64 or arm64]
+    - spectralib  # [aarch64 or arm64]
+    - gsl  # [aarch64 or arm64]
+    - sqlite  # [aarch64 or arm64]
+    - zstd  # [aarch64 or arm64]
+    - zlib  # [aarch64 or arm64]
+    - llvm-openmp  # [osx and arm64]
 
 test:
   commands:
     - gcta | grep "Analysis started"
+    - gcta64 | grep "Analysis started"
 
 about:
   home: "https://yanglab.westlake.edu.cn/software/gcta"
   license: GPL-3.0-only
   summary: GCTA (Genome-wide Complex Trait Analysis) estimates the proportion of phenotypic variance explained by all genome-wide SNPs for complex traits.
+  dev_url: https://github.com/jianyangqt/gcta
 
 extra:
+  additional-platforms:
+    - linux-aarch64
+    - osx-arm64
   identifiers:
     - biotools:gcta
-    - doi:10.1016/j.ajhg.2010.11.011 
+    - doi:10.1016/j.ajhg.2010.11.011
   skip-lints:
     - should_be_noarch_generic
     - should_not_be_noarch_source
