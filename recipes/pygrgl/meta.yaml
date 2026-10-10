@@ -10,7 +10,7 @@ source:
   sha256: c16143bc2a538efffd984c9323a2ae45333e2df1c6f528578156fd156974e3db
 
 build:
-  number: 0
+  number: 1
   entry_points:
     - grg=pygrgl.cli:main
   script: "{{ PYTHON }} -m pip install --no-deps --no-build-isolation . -vv"
@@ -49,5 +49,8 @@ about:
   dev_url: "https://github.com/aprilweilab/grgl"
 
 extra:
+  additional-platforms:
+    - linux-aarch64
+    - osx-arm64
   recipe-maintainers:
     - dcdehaas
