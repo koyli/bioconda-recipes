@@ -11,6 +11,10 @@ else
     export SPECTRA_LIB="${PREFIX}/include"
     export BOOST_LIB="${PREFIX}/include"
     export OPENBLAS="${PREFIX}"
+    if [[ "$(uname)" == Linux ]]; then
+        # several headers use uint8_t/uint32_t without including <cstdint>, which current GCC requires
+        export CXXFLAGS="${CXXFLAGS} -include cstdint"
+    fi
     cmake -S . -B build ${CMAKE_ARGS} \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
