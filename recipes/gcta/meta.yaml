@@ -21,6 +21,8 @@ source:
   - url: https://github.com/zhilizheng/plink-ng/archive/{{ plink_ng_commit }}.tar.gz # [aarch64 or arm64]
     sha256: a7c70c237d49d64fc1668ced373036c09b41d7c61d0b8b24b47e2fb76474455d # [aarch64 or arm64]
     folder: submods/plink-ng # [aarch64 or arm64]
+    patches: # [aarch64 or arm64]
+      - 0002-plink-ng-variable-count-shifts.patch # [aarch64 or arm64]
   # upstream requires Eigen 3.3.7, which conda-forge does not have for osx-arm64
   - url: https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.gz # [aarch64 or arm64]
     sha256: d56fbad95abf993f8af608484729e3d87ef611dd85b3380a8bad1d5cbc373a57 # [aarch64 or arm64]

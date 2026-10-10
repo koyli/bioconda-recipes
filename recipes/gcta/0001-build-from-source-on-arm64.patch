@@ -199,21 +199,3 @@ index be56fb3..f54c24d 100644
                  &lda, work, &lwork, &info);
  #endif
          if(info != 0){
-diff --git a/submods/plink-ng/2.0/plink2_base.h b/submods/plink-ng/2.0/plink2_base.h
-index d9ac69d..251e7b3 100644
---- a/submods/plink-ng/2.0/plink2_base.h
-+++ b/submods/plink-ng/2.0/plink2_base.h
-@@ -1005,11 +1005,11 @@ HEADER_INLINE VecC vecc_setzero() {
- }
- 
- HEADER_INLINE VecW vecw_srli(VecW vv, uint32_t ct) {
--  return R_CAST(VecW, _mm_srli_epi64(R_CAST(__m128i, vv), ct));
-+  return R_CAST(VecW, _mm_srl_epi64(R_CAST(__m128i, vv), _mm_cvtsi32_si128(ct)));
- }
- 
- HEADER_INLINE VecW vecw_slli(VecW vv, uint32_t ct) {
--  return R_CAST(VecW, _mm_slli_epi64(R_CAST(__m128i, vv), ct));
-+  return R_CAST(VecW, _mm_sll_epi64(R_CAST(__m128i, vv), _mm_cvtsi32_si128(ct)));
- }
- 
- HEADER_INLINE VecW vecw_and_notfirst(VecW excl, VecW main) {
