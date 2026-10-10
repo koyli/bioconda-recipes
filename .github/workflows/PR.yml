@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Add bioconda remote (fork-only)
+        run: git remote add upstream https://github.com/bioconda/bioconda-recipes.git && git fetch -q upstream master
+
       - name: Fetch commits through the merge base
         uses: fulcrumgenomics/fetch-through-merge-base@v1
         with:
@@ -98,6 +101,9 @@ jobs:
             /usr/share/swift
 
       - uses: actions/checkout@v4
+
+      - name: Add bioconda remote (fork-only)
+        run: git remote add upstream https://github.com/bioconda/bioconda-recipes.git && git fetch -q upstream master
 
       - name: Fetch commits through the merge base
         uses: fulcrumgenomics/fetch-through-merge-base@v1
@@ -201,6 +207,9 @@ jobs:
     needs: build-linux
     steps:
       - uses: actions/checkout@v4
+
+      - name: Add bioconda remote (fork-only)
+        run: git remote add upstream https://github.com/bioconda/bioconda-recipes.git && git fetch -q upstream master
       
       - name: Fetch commits through the merge base
         uses: fulcrumgenomics/fetch-through-merge-base@v1
