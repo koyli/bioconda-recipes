@@ -1,0 +1,72 @@
+# Fork-only: builds changed recipes on ARM runners (mirrors upstream's .circleci/config.yml
+# build_and_test job, which does not run on forks). Lives only on the fork's arm-staging branch.
+name: ARM builds
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+concurrency:
+  group: arm-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+          - platform: osx-arm64
+            runner: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for additional platforms
+        id: check
+        run: |
+          base="origin/${GITHUB_BASE_REF:-master}"
+          result=$(./scripts/check-for-additional-platforms.sh "${base}...HEAD" build_and_test "build_and_test-${{ matrix.platform }}")
+          echo "base=${base}" >> "$GITHUB_OUTPUT"
+          echo "build=$([[ $result == build ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Install bioconda-utils
+        if: steps.check.outputs.build == 'true'
+        run: |
+          wget -q https://raw.githubusercontent.com/bioconda/bioconda-common/master/{common,install-and-set-up-conda,configure-conda}.sh
+          sudo mkdir -p /opt && sudo chmod o+rwx /opt
+          bash install-and-set-up-conda.sh
+          echo /opt/mambaforge/bin >> "$GITHUB_PATH"
+
+      - name: Build and test
+        if: steps.check.outputs.build == 'true'
+        run: |
+          set -xe
+          bash configure-conda.sh
+          eval "$(conda shell.bash hook)"
+          conda activate bioconda
+          source common.sh
+          if [[ $(uname) = Darwin ]]; then
+            OSX_SDK_DIR="$(xcode-select -p)/Platforms/MacOSX.platform/Developer/SDKs"
+            sudo chmod o+rwx "${OSX_SDK_DIR}"
+            run_conda_forge_build_setup
+            bioconda-utils build recipes config.yml --lint --git-range "${{ steps.check.outputs.base }}" HEAD
+          else
+            bioconda-utils build recipes config.yml \
+              --lint --docker --mulled-test \
+              --docker-base-image "quay.io/bioconda/bioconda-utils-build-env-cos7-$(arch):${BIOCONDA_UTILS_TAG#v}" \
+              --git-range "${{ steps.check.outputs.base }}" HEAD
+          fi
+
+      - name: Upload packages
+        if: always() && steps.check.outputs.build == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.platform }}
+          path: |
+            /opt/mambaforge/envs/bioconda/conda-bld/${{ matrix.platform }}/*.conda
+            /opt/mambaforge/envs/bioconda/conda-bld/${{ matrix.platform }}/*.tar.bz2
+          if-no-files-found: ignore
