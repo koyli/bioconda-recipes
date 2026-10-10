@@ -1,0 +1,19 @@
+--- a/setup.py	2026-10-10 13:44:33
++++ b/setup.py	2026-10-10 13:44:33
+@@ -3,6 +3,7 @@
+ from setuptools.command.build_ext import build_ext
+ import copy
+ import os
++import shlex
+ import shutil
+ import subprocess
+ import sys
+@@ -111,7 +112,7 @@
+                     build_type.upper(), self.build_temp
+                 ),
+                 "-DPYTHON_EXECUTABLE={}".format(sys.executable),
+-            ] + extra_cmake_args
++            ] + extra_cmake_args + shlex.split(os.environ.get("CMAKE_ARGS", ""))
+ 
+             # Add CUDA support if enabled
+             if enable_cuda:
