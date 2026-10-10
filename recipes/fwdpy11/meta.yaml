@@ -25,7 +25,6 @@ requirements:
     - {{ compiler('cxx') }}
     - {{ compiler('rust') }}
     - {{ stdlib('c') }}
-    - cbindgen
     - cmake
     - make
   host:
