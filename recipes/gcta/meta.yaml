@@ -7,10 +7,11 @@ package:
   version: "{{ version }}"
 
 source:
-  - url: https://yanglab.westlake.edu.cn/software/{{ name }}/bin/{{ name }}-{{ version }}-linux-kernel-3-x86_64.zip # [linux and x86_64]
-    sha256: f2fc3f46b98f5eb2bbe0886a2c60268c6b634583f7a3fed51cfeb15e9f33fb0d # [linux and x86_64]
-  - url: https://yanglab.westlake.edu.cn/software/{{ name }}/bin/{{ name }}-{{ version }}-macOS-x86_64.zip # [osx and x86_64]
-    sha256: 51c2a5c622cb7ab8d246252abece9d28bf6e41c0e54a0b820a0871695a269441 # [osx and x86_64]
+  # upstream x86_64 binaries (the yanglab.westlake.edu.cn zips are no longer served)
+  - url: https://github.com/jianyangqt/gcta/releases/download/v{{ version }}/gcta-{{ version }}-linux-x86_64-static # [linux and x86_64]
+    sha256: dbb2b5e5d51e278328ff297a403d3dd8ee5f5280f0b6d3d8db74b3e7fead7b49 # [linux and x86_64]
+  - url: https://github.com/jianyangqt/gcta/releases/download/v{{ version }}/gcta-{{ version }}-MacOS-x86_64 # [osx and x86_64]
+    sha256: 33f4b78f03b1b26d11a34f15089d245ca1f94d4424113e81cea4a6c1d1e10a36 # [osx and x86_64]
   # No upstream binaries for ARM, so build from source there
   - url: https://github.com/jianyangqt/gcta/archive/refs/tags/v{{ version }}.tar.gz # [aarch64 or arm64]
     sha256: d38841587bef016d7885cc1b3287d7ed0373bd370674130e814e2c5e6a90bfbf # [aarch64 or arm64]

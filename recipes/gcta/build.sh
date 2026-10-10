@@ -5,7 +5,7 @@ mkdir -p $PREFIX/bin
 
 if [[ "$(uname -m)" == "x86_64" ]]; then
     # repackaged upstream binary
-    cp gcta-1.94.1 $PREFIX/bin/gcta-1.94.1
+    install -m 755 gcta-1.94.1-* $PREFIX/bin/gcta-1.94.1
 else
     export EIGEN3_INCLUDE_DIR="${SRC_DIR}/eigen"
     export SPECTRA_LIB="${PREFIX}/include"
