@@ -10,7 +10,7 @@ source:
   sha256: 136de2154b36a89cc1df17ec8e89648f680a3643731a7ddcd606a1a4fefb9133
 
 build:
-  number: 0
+  number: 1
   skip: true  # [py < 310]
   run_exports:
     - {{ pin_subpackage(name, max_pin="x") }}
@@ -73,5 +73,7 @@ about:
   dev_url: https://github.com/wgobrien/Trident
 
 extra:
+  additional-platforms:
+    - osx-arm64
   recipe-maintainers:
     - wgobrien
