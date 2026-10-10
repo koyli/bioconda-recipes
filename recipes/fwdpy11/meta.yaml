@@ -1,5 +1,5 @@
 {% set name = "fwdpy11" %}
-{% set version = "0.24.5" %}
+{% set version = "0.24.7" %}
 
 package:
   name: {{ name|lower }}
@@ -7,10 +7,11 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/fwdpy11-{{ version }}.tar.gz
-  sha256: cc427619d56e792e75e71e664c5905af9975bb146a1cc4b4e0bae0b467321940
+  sha256: 586c1856839bd67df53a5d5cb124b1a3f9a15c2cb6831925497531447ed94522
 
 build:
-  number: 1
+  number: 0
+  skip: true  # [py < 311 or py >= 315]
   script_env:
     - SETUPTOOLS_SCM_PRETEND_VERSION={{ version }}
   entry_points:
@@ -23,27 +24,25 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     - {{ compiler('rust') }}
+    - {{ stdlib('c') }}
+    - cbindgen
     - cmake
     - make
   host:
     - python
     - pip
-    - setuptools-scm >=8
-    - pybind11 ==2.12.0
+    - setuptools-scm
+    - pybind11 >=3.0
     - gsl
     - scikit-build-core >=0.11.0
     - numpy >=2.0
   run:
     - python
-    - numpy <2.0
-    - tskit >=0.5.6
+    - numpy >=1.23.5
+    - tskit >=1.0.0
     - gsl
-    - openblas
-    - scipy
-    - attrs
-    - black
-    - demes >=0.2.2
-    - intervaltree
+    - attrs >=20.3.0
+    - demes >=0.2.2,<0.3
     - deprecated
 
 test:
@@ -67,3 +66,4 @@ extra:
     - doi:10.1371/journal.pcbi.1006581
   additional-platforms:
     - linux-aarch64
+    - osx-arm64
