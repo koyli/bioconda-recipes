@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Add bioconda remote (fork-only)
-        run: git remote add upstream https://github.com/bioconda/bioconda-recipes.git && git fetch -q upstream master
+        run: git remote add upstream https://github.com/bioconda/bioconda-recipes.git
 
       - name: Check for additional platforms
         id: check
