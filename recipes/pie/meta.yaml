@@ -11,7 +11,7 @@ source:
   sha256: {{ sha256 }}
 
 build:
-  number: 0
+  number: 1
   skip: true  # [py<38]
   run_exports:
     - "{{ pin_subpackage(name, max_pin='x.x') }}"
@@ -53,5 +53,8 @@ about:
   summary: Phasing all-in-one evaluator
 
 extra:
+  additional-platforms:
+    - linux-aarch64
+    - osx-arm64
   recipe-maintainers:
     - JMencius
