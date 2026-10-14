@@ -10,8 +10,8 @@ source:
   sha256: "af7c6d68d0e5fb248180741adb136607b6f4b789afa21a0e0ab42804b91c1cc9"
 
 build:
-  number: 0
-  skip: true  # [win]
+  number: 1
+  skip: true  # [win or py < 310]
   script:
     - export LIBCLANG_PATH="${PREFIX}/lib"
     - "{{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv"
@@ -24,7 +24,7 @@ requirements:
     - {{ compiler('rust') }}
     - {{ stdlib('c') }}
   host:
-    - python >=3.10
+    - python
     - pip
     - maturin >=1.7,<2
     - clangdev
@@ -34,7 +34,7 @@ requirements:
     - bzip2
     - xz
   run:
-    - python >=3.10
+    - python
     - typer >=0.12
     - pydantic >=2.5,<3
     - pyyaml >=6.0
@@ -62,6 +62,9 @@ about:
   license_file: LICENSE
 
 extra:
+  additional-platforms:
+    - linux-aarch64
+    - osx-arm64
   recipe-maintainers:
     - leelieber2025
   notes: |
